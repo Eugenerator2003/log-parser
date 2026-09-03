@@ -8,14 +8,14 @@ namespace Application.Types
     {
         public string RemoteIp;
         public string RemoteUser;
-        public DateTime TimeLocal;
+        public DateTimeOffset TimeLocal;
         public string Request;
         public int Status;
         public int BodyBytesSent;
         public string HttpReferer; 
         public string UserAgent;
 
-        public NginxBaseLog(string remoteIp, string remoteUser, DateTime timeLocal, string request, int status, int bodyBytesSent, string httpReferer, string userAgent)
+        public NginxBaseLog(string remoteIp, string remoteUser, DateTimeOffset timeLocal, string request, int status, int bodyBytesSent, string httpReferer, string userAgent)
         {
             RemoteIp = remoteIp;
             RemoteUser = remoteUser;
