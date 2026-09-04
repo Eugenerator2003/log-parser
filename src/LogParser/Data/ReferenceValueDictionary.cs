@@ -25,5 +25,10 @@ namespace LogParser.Data
             dictionary.TryGetValue(key, out var value);
             return value;
         }
+
+        public void Clear()
+        {
+            dictionary.Clear();
+        }
     }
 }
