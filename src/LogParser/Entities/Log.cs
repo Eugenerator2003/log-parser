@@ -6,11 +6,17 @@ namespace LogParser.Entities
 {
     public class Log : BaseEntity
     {
+        public int RemoteAddressId => RemoteAddress.Id;
+
         public RemoteAddress RemoteAddress { get; }
+
+        public int RemoteUserId => RemoteUser.Id;
 
         public RemoteUser RemoteUser { get; }
 
         public Status Status { get; }
+
+        public int UserAgentId => UserAgent.Id;
 
         public UserAgent UserAgent { get; }
 
