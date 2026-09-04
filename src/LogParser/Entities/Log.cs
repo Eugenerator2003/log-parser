@@ -14,7 +14,7 @@ namespace LogParser.Entities
 
         public RemoteUser RemoteUser { get; }
 
-        public Status Status { get; }
+        public int StatusCode { get; }
 
         public int UserAgentId => UserAgent.Id;
 
@@ -32,7 +32,7 @@ namespace LogParser.Entities
             int id, 
             RemoteAddress remoteAddress, 
             RemoteUser remoteUser, 
-            Status status, 
+            int statusCode, 
             UserAgent userAgent, 
             string request, 
             DateTimeOffset dateTimeOffset, 
@@ -41,7 +41,7 @@ namespace LogParser.Entities
         {
             RemoteAddress = remoteAddress;
             RemoteUser = remoteUser;
-            Status = status;
+            StatusCode = statusCode;
             UserAgent = userAgent;
             Request = request;
             DateTimeOffset = dateTimeOffset;
@@ -53,7 +53,6 @@ namespace LogParser.Entities
         {
             RemoteAddress = null!;
             RemoteUser = null!;
-            Status = null!;
             UserAgent = null!;
             Request = string.Empty;
             HttpReferer = string.Empty;
