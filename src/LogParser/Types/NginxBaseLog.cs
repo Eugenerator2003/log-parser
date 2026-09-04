@@ -4,16 +4,16 @@ using System.Text;
 
 namespace Application.Types
 {
-    public class NginxBaseLog
+    public readonly struct NginxBaseLog
     {
-        public string RemoteIp;
-        public string RemoteUser;
-        public DateTimeOffset TimeLocal;
-        public string Request;
-        public int Status;
-        public int BodyBytesSent;
-        public string HttpReferer; 
-        public string UserAgent;
+        public string RemoteIp { get; init; }
+        public string RemoteUser { get; init; }
+        public DateTimeOffset TimeLocal { get; init; }
+        public string Request { get; init; }
+        public int Status { get; init; }
+        public int BodyBytesSent { get; init; }
+        public string HttpReferer { get; init; }
+        public string UserAgent { get; init; }
 
         public NginxBaseLog(string remoteIp, string remoteUser, DateTimeOffset timeLocal, string request, int status, int bodyBytesSent, string httpReferer, string userAgent)
         {
@@ -43,6 +43,16 @@ namespace Application.Types
         public override int GetHashCode()
         {
             return HashCode.Combine(RemoteIp, RemoteUser, TimeLocal, Request, Status, BodyBytesSent, HttpReferer, UserAgent);
+        }
+
+        public static bool operator ==(NginxBaseLog left, NginxBaseLog right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(NginxBaseLog left, NginxBaseLog right)
+        {
+            return !(left == right);
         }
     }
 }
