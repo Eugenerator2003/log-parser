@@ -1,0 +1,424 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Web-query</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-size: 17px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #edebeb;
+            padding: 20px 0;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 95%;
+            max-width: 95%;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        #tabs {
+            display: flex;
+            align-items: flex-end;
+            gap: 6px;
+            border-bottom: 2px solid #e2e8f0;
+            margin-bottom: 15px;
+        }
+
+        .tab {
+            padding: 8px 18px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #64748b;
+            background-color: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            border-bottom: none;
+            border-radius: 6px 6px 0 0;
+            cursor: pointer;
+            transition: background-color 0.15s, color 0.15s;
+            user-select: none;
+            position: relative;
+            bottom: -2px;
+        }
+
+            .tab:not(.active):hover {
+                background-color: #e2e8f0;
+                color: #1e293b;
+            }
+
+            .tab.active {
+                background-color: #ffffff;
+                color: #2563eb;
+                border-color: #e2e8f0;
+                border-top: 2px solid #2563eb;
+                border-bottom: 2px solid #ffffff;
+                font-weight: 600;
+            }
+
+        #addTab,
+        #removeTab {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 4px;
+            background-color: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            color: #64748b;
+            cursor: pointer;
+            font-size: 18px;
+            margin-bottom: 2px;
+        }
+
+            #addTab:hover,
+            #removeTab:hover {
+                background-color: #e2e8f0;
+                color: #1e293b;
+            }
+
+        .form {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        textarea {
+            display: block;
+            width: 100%;
+            height: 120px;
+            font-family: "Fira Code", Consolas, Monaco, monospace;
+            font-size: 14px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            resize: vertical;
+            outline: none;
+        }
+
+            textarea:focus {
+                border-color: #2563eb;
+            }
+
+        button {
+            align-self: flex-start;
+            padding: 8px 18px;
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 15px;
+            transition: background-color 0.15s;
+        }
+
+            button:hover {
+                background-color: #1d4ed8;
+            }
+
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            margin-top: 15px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            font-size: 14px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f8fafc;
+            color: #475569;
+            font-weight: 600;
+            padding: 10px 16px;
+            border-bottom: 2px solid #e2e8f0;
+            position: relative;
+            user-select: none;
+        }
+
+        td {
+            padding: 10px 16px;
+            border-bottom: 1px solid #edf2f7;
+            color: #1e293b;
+            font-family: Consolas, Monaco, monospace;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        tr:hover {
+            background-color: #f8fafc;
+        }
+
+        .danger {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+
+        .resize-handle {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 6px;
+            height: 100%;
+            cursor: col-resize;
+            z-index: 10;
+            user-select: none;
+        }
+
+            .resize-handle:hover,
+            body.resizing .resize-handle {
+                background-color: #3b82f6;
+                width: 4px;
+            }
+
+        body.resizing {
+            user-select: none;
+            cursor: col-resize;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="tabs">
+            <div id="addTab">+</div>
+            <div id="removeTab">-</div>
+        </div>
+        <div class="form">
+<textarea id="text" placeholder="Enter some sql-query"></textarea>
+            <button id="button">Execute</button>
+        </div>
+        <div id="result" class="result-block">
+            <div id="message-block"></div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr id="thead-row"></tr>
+                    </thead>
+                    <tbody id="tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <script>
+        let text = document.getElementById("text");
+        let message = document.getElementById("message-block");
+        let theadRow = document.getElementById("thead-row");
+        let tbody = document.getElementById("tbody");
+        let tabs = document.getElementById("tabs");
+        let addTab = document.getElementById("addTab");
+        let removeTab = document.getElementById("removeTab");
+        let queries;
+        let tabIndex = 0;
+        let response;
+
+        window.addEventListener("load", loadTabs);
+        text.addEventListener("input", changeText);
+        document.getElementById("button").addEventListener("click", executeQuery);
+        addTab.addEventListener("click", addNewTab);
+        removeTab.addEventListener("click", removeCurrentTab);
+
+        function executeQuery() {
+            let query = text.value.replaceAll("\n", " ");
+            if (query.length > 0) {
+                fetch(`/api/query?query=${query}`)
+                    .then(response => response.json()
+                        .then(j => processResult(j)))
+            }
+        }
+
+        function processResult(json) {
+            message.className = "";
+            removeAllChilds(message);
+            removeAllChilds(theadRow);
+            removeAllChilds(tbody);
+            if (json.length > 0) {
+                processArray(json);
+            }
+            else {
+                processValue(json);
+            }
+        }
+
+        function processArray(array) {
+            let first = array[0];
+            let keys = Object.keys(first);
+            for (let key of keys) {
+                let th = document.createElement("th");
+                th.innerText = key;
+                theadRow.appendChild(th);
+            }
+            for (let i = 0; i < array.length; i++) {
+                let tr = document.createElement("tr");
+                for (let key of keys) {
+                    let td = document.createElement("td");
+                    td.innerText = array[i][key];
+                    tr.appendChild(td);
+                }
+                tbody.appendChild(tr);
+            }
+        }
+
+        function processValue(value) {
+            if (value.error) {
+                message.className = "danger";
+                message.innerHTML = value.error;
+            }
+            else {
+
+            }
+        }
+
+        function removeAllChilds(node) {
+            while (node.firstChild) {
+                node.removeChild(node.firstChild);
+            }
+        }
+
+        function loadTabs() {
+            queries = JSON.parse(localStorage.getItem("queries"));
+            if (queries != null && queries.length > 0) {
+                for (let i = 0; i < queries.length; i++) {
+                    createTab(i, i + 1);
+                }
+            }
+            else {
+                queries = [""];
+                createTab(0, 1);
+            }
+            changeTab(0);
+        }
+
+        function changeText(e) {
+            queries[tabIndex] = e.target.value;
+            saveQueries();
+        }
+
+        function addNewTab() {
+            tabIndex = queries.length;
+            queries.push("");
+            createTab(tabIndex, tabIndex + 1);
+            saveQueries();
+            changeTab(tabIndex);
+        }
+
+        function createTab(index, value) {
+            let div = document.createElement("div");
+            div.className = "tab";
+            div.innerText = value;
+            div.addEventListener("click", () => changeTab(index));
+            tabs.insertBefore(div, addTab);
+        }
+
+        function changeTab(index) {
+            tabIndex = index;
+            text.value = queries[tabIndex] || "";
+            let tabNodes = tabs.querySelectorAll(".tab");
+            tabNodes.forEach((node, i) => {
+                if (i === index) {
+                    node.classList.add("active");
+                } else {
+                    node.classList.remove("active");
+                }
+            });
+        }
+
+        function removeCurrentTab() {
+            if (queries.length > 1) {
+                queries.splice(tabIndex, 1)
+                tabs.removeChild(tabs.children[tabIndex]);  
+                tabIndex--;
+                saveQueries();
+                changeTab(tabIndex);
+            }
+        }
+
+        function saveQueries() {
+            localStorage.setItem("queries", JSON.stringify(queries));
+        }
+    </script>
+
+    <script>
+        (function () {
+            let activeTh = null;
+            let startX = 0;
+            let startWidth = 0;
+
+            document.getElementById('result').addEventListener('mousedown', function (e) {
+                if (e.target.classList.contains('resize-handle')) {
+                    activeTh = e.target.parentElement;
+                    startX = e.pageX;
+                    startWidth = activeTh.offsetWidth;
+                    document.body.classList.add('resizing');
+
+                    document.addEventListener('mousemove', onMouseMove);
+                    document.addEventListener('mouseup', onMouseUp);
+                }
+            });
+
+            function onMouseMove(e) {
+                if (activeTh) {
+                    const width = startWidth + (e.pageX - startX);
+                    if (width > 40) {
+                        activeTh.style.width = width + 'px';
+                    }
+                }
+            }
+
+            function onMouseUp() {
+                activeTh = null;
+                document.body.classList.remove('resizing');
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+            }
+
+            const observer = new MutationObserver(function (mutations) {
+                mutations.forEach(function (mutation) {
+                    if (mutation.type === 'childList') {
+                        const ths = mutation.target.querySelectorAll('th');
+                        ths.forEach(th => {
+                            if (!th.querySelector('.resize-handle')) {
+                                const handle = document.createElement('div');
+                                handle.className = 'resize-handle';
+                                th.appendChild(handle);
+
+                                if (!th.style.width) {
+                                    th.style.width = th.offsetWidth + 'px';
+                                }
+                            }
+                        });
+                    }
+                });
+            });
+
+            const theadRow = document.getElementById("thead-row");
+            if (theadRow) {
+                observer.observe(theadRow, { childList: true });
+            }
+        })();
+    </script>
+</body>
+</html>

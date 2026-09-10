@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "LogParser": {
+      "commandName": "Project",
+      "commandLineArgs": "-f \"\\\\wsl.localhost\\Debian\\var\\log\\nginx\\access.log\""
+    }
+  }
+}

@@ -5,12 +5,20 @@ using Microsoft.Data.Sqlite;
 using System.CommandLine;
 using System.Diagnostics;
 using System.Globalization;
+using System.Net;
 using System.Text.RegularExpressions;
 
 namespace Application
 {
     internal class Program
     {
+        private enum ProgramMode
+        {
+            Server,
+            Parser,
+            Invalid
+        }
+
         static readonly string DateFormat = "dd/MMM/yyyy:HH:mm:ss zzz";
         static readonly Regex GroupRegex = new Regex(@"^(?<ip>\S+)\s+-\s+\[?(?<user>[^\]]*)\]?\s+\[(?<datetime>[^\]]*)\]\s+""(?<request>[^""]*)""\s+(?<status>\d+)\s+(?<bytes>\d+)\s+""(?<referer>[^""]*)""\s+""(?<agent>[^""]*)""");
 
@@ -24,10 +32,44 @@ namespace Application
 
         static int Main(string[] args)
         {
-            var fileOption = new Option<FileInfo>(name: "-file", ["-f"])
+            var fileOption = new Option<FileInfo>(name: "--file", ["-f"])
             {
                 Required = true,
                 Description = "Path to log file",
+            };
+            var modeOption = new Option<ProgramMode>(name: "--mode", ["-m"])
+            {
+                Required = false,
+                Description = "Program mode: server (\"server\") or parse (\"parse\") only. Defaults to server",
+                DefaultValueFactory = (args) => ProgramMode.Server,
+                CustomParser = (result) =>
+                {
+                    var str = result.Tokens.Single().Value;
+                    if (str == "server")
+                    {
+                        return ProgramMode.Server;
+                    }
+                    else if (str == "parse")
+                    {
+                        return ProgramMode.Parser;
+                    }
+                    else
+                    {
+                        return ProgramMode.Invalid;
+                    }
+                }
+            };
+            var addressOption = new Option<string>(name: "--address", ["-a"])
+            {
+                Required = false,
+                Description = "Server address. Applied only for server mode. Defaults to 127.0.0.1",
+                DefaultValueFactory = (args) => "127.0.0.1"
+            };
+            var portOption = new Option<int>(name: "--port", ["-p"])
+            {
+                Required = false,
+                Description = "Server port. Applied only for server mode. Defaults to 5000",
+                DefaultValueFactory = (args) => 5000
             };
             var intervalOption = new Option<int>(name: "--interval", ["-i"])
             {
@@ -45,17 +87,69 @@ namespace Application
             rootCommand.Add(fileOption);
             rootCommand.Add(intervalOption);
             rootCommand.Add(bufferOption);
+            rootCommand.Add(addressOption);
+            rootCommand.Add(portOption);
 
             rootCommand.SetAction(async (result) =>
             {
                 var file = result.GetValue(fileOption)!;
                 var interval = result.GetValue(intervalOption);
                 var bufferSize = result.GetValue(bufferOption);
+                var programMode = result.GetValue(modeOption);
+                var address = result.GetValue(addressOption)!;
+                var port = result.GetValue(portOption);
+                if (programMode == ProgramMode.Invalid)
+                {
+                    Console.WriteLine("Invalid mode option. Requires \"server\" or \"parse\"");
+                    return;
+                }
                 InitializeBuffer(bufferSize);
-                ReadLogfile(file, interval);
+                if (programMode == ProgramMode.Parser)
+                {
+                    ReadLogfile(file, interval);
+                }
+                else
+                {
+                    _ = Task.Run(() => ReadLogfile(file, interval));
+                    StartWebServer(address, port);
+                }
             });
 
             return rootCommand.Parse(args).Invoke();
+        }
+
+        static void StartWebServer(string address, int port)
+        {
+            if (!IPAddress.TryParse(address, out var ip))
+            {
+                Console.WriteLine($"Invalid ip address");
+                return;
+            }
+            Console.WriteLine($"Starting web application on address \"{address}\" with {port} port");
+            var builder = WebApplication.CreateBuilder([]);
+
+            builder.WebHost.ConfigureKestrel(options =>
+            {
+                options.Listen(ip, port);
+            });
+            var app = builder.Build();
+            app.UseStaticFiles();
+            app.MapGet("/", () => Results.Redirect("/index.html"));
+            app.MapGet("/api/query", (string query) => ExecuteRawSql(query));
+            app.Run();
+        }
+
+        static IResult ExecuteRawSql(string query)
+        {
+            try
+            {
+                var result = Db.ExecuteQuery(query);
+                return Results.Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return Results.BadRequest(new { error = ex.Message });
+            }
         }
 
         static void ReadLogfile(FileInfo fileInfo, int interval)
@@ -64,6 +158,7 @@ namespace Application
             if (!fileInfo.Exists)
             {
                 Console.WriteLine($"File {fileInfo.FullName} doesn't exists");
+                return;
             }
             Addresses.Clear();
             Users.Clear();
@@ -77,9 +172,6 @@ namespace Application
                 ReadLineToBuffer(line);
             }
             InsertBufferToDatabase();
-            Db.Dispose();
-            _ = Task.Run(Output);
-
             while (true)
             {
                 bool isRead = false;
@@ -91,31 +183,14 @@ namespace Application
                     {
                         continue;
                     }
-
                     ReadLineToBuffer(line);
                 }
-
                 if (!isRead)
                 {
                     reader.DiscardBufferedData();
                 }
-
                 Task.Delay(interval).Wait();
             }
-        }
-
-        static async Task Output()
-        {
-            //int count = 0;
-            //while (true)
-            //{
-            //    if (count != Logs.Count)
-            //    {
-            //        count = Logs.Count;
-            //        Console.WriteLine($"Current count {Logs.Count}");
-            //    }
-            //    await Task.Delay(1000);
-            //}
         }
 
         static void ReadLineToBuffer(string line)
