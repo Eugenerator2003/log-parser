@@ -22,6 +22,11 @@ namespace LogParser.Data
             Connection.Execute("PRAGMA synchronous=NORMAL;");
         }
 
+        public IEnumerable<dynamic> ExecuteQuery(string query)
+        {
+            return Connection.Query(query);
+        }
+
         public void Dispose()
         {
             Connection.Dispose();
