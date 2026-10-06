@@ -14,5 +14,18 @@
             IsUniq = isUniq;
             Type = type;
         }
+
+        public override bool Equals(object? obj)
+        {
+            return obj is FieldDefinition definition &&
+                   Type == definition.Type &&
+                   IsIndexed == definition.IsIndexed &&
+                   IsUniq == definition.IsUniq;
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Type, IsIndexed, IsUniq);
+        }
     }
 }
