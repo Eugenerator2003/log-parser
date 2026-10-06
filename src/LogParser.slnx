@@ -1,3 +1,4 @@
 <Solution>
+  <Project Path="LogParser.Tests/LogParser.Tests.csproj" Id="891831a1-ea24-4731-b882-b0594a317742" />
   <Project Path="LogParser/LogParser.csproj" />
 </Solution>
