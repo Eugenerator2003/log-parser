@@ -133,5 +133,18 @@ namespace LogParser.Data.Common
                 }
             }
         }
+
+        public override bool Equals(object? obj)
+        {
+            return obj is TableMetadata metadata &&
+                   EqualityComparer<ColumnMetadata[]>.Default.Equals(columns, metadata.columns) &&
+                   EqualityComparer<ForeignKeyMetadata[]>.Default.Equals(foreignKeys, metadata.foreignKeys) &&
+                   EqualityComparer<IIndexMetadata[]>.Default.Equals(indices, metadata.indices);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(columns, foreignKeys, indices);
+        }
     }
 }
