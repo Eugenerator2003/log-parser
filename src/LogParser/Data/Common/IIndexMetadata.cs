@@ -2,6 +2,8 @@
 {
     public interface IIndexMetadata
     {
+        IReadOnlyCollection<IndexByColumnMetadata> GetIndexColumns();
+        
         void AddIndex(IndexByColumnMetadata index);
     }
 }

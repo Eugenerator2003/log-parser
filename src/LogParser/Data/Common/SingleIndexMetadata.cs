@@ -23,6 +23,17 @@
             return indexByColumn;
         }
 
+        public IReadOnlyCollection<IndexByColumnMetadata> GetIndexColumns()
+        {
+            if (indexByColumn != null)
+            {
+                return [indexByColumn];
+            }else
+            {
+                return Array.Empty<IndexByColumnMetadata>();
+            }
+        }
+
         public override bool Equals(object? obj)
         {
             return obj is SingleIndexMetadata metadata &&
